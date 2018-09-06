@@ -845,6 +845,8 @@ class TypeComparer(initctx: Context) extends ConstraintHandling {
         case tycon2: TypeRef =>
           isMatchingApply(tp1) ||
           defn.isTypelevel_S(tycon2.symbol) && compareS(tp2, tp1, fromBelow = true) || {
+            tycon2.symbol.isMirror && mirror.Evaluator.reduce(tp2)(recur(tp1, _))
+          } || {
             tycon2.info match {
               case info2: TypeBounds =>
                 val gbounds2 = ctx.gadt.bounds(tycon2.symbol)
@@ -889,7 +891,8 @@ class TypeComparer(initctx: Context) extends ConstraintHandling {
               val gbounds1 = ctx.gadt.bounds(tycon1.symbol)
               if (gbounds1 == null) recur(tp1.superType, tp2)
               else recur((gbounds1.hi & tycon1.info.bounds.hi).applyIfParameterized(args1), tp2)
-            })
+            }) ||
+          tycon1.symbol.isMirror && mirror.Evaluator.reduce(tp1)(recur(_, tp2))
         case tycon1: TypeProxy =>
           recur(tp1.superType, tp2)
         case _ =>

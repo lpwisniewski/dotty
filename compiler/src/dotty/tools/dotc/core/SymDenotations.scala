@@ -798,8 +798,8 @@ object SymDenotations {
                            // we need an inline flag on them only do that
                            // reduceProjection gets access to their rhs
 
-    def isMirrorMethod(implicit ctx: Context): Boolean =
-      is(Method) && hasAnnotation(defn.ScalaMirrorAnnot)
+    def isMirror(implicit ctx: Context): Boolean =
+      hasAnnotation(defn.ScalaMirrorAnnot)
 
     /** An erased value or an inline method, excluding @forceInline annotated methods.
      *  The latter have to be kept around to get to parity with Scala.
