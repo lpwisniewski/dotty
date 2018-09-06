@@ -892,7 +892,8 @@ class TypeComparer(initctx: Context) extends ConstraintHandling {
               if (gbounds1 == null) recur(tp1.superType, tp2)
               else recur((gbounds1.hi & tycon1.info.bounds.hi).applyIfParameterized(args1), tp2)
             }) ||
-          tycon1.symbol.isMirror && mirror.Evaluator.reduce(tp1)(recur(_, tp2))
+          tycon1.symbol.isMirror && mirror.Evaluator.reduce(tp1)(recur(_, tp2)) ||
+          recur(tp1.superType, tp2)
         case tycon1: TypeProxy =>
           recur(tp1.superType, tp2)
         case _ =>
