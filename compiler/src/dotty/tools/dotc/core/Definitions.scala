@@ -782,6 +782,8 @@ class Definitions {
   def ScalaStrictFPAnnot(implicit ctx: Context): ClassSymbol = ScalaStrictFPAnnotType.symbol.asClass
   lazy val ScalaStaticAnnotType: TypeRef            = ctx.requiredClassRef("scala.annotation.static")
   def ScalaStaticAnnot(implicit ctx: Context): ClassSymbol = ScalaStaticAnnotType.symbol.asClass
+  lazy val ScalaMirrorAnnotType            = ctx.requiredClassRef("scala.annotation.mirror")
+  def ScalaMirrorAnnot(implicit ctx: Context) = ScalaMirrorAnnotType.symbol.asClass
   lazy val SerialVersionUIDAnnotType: TypeRef         = ctx.requiredClassRef("scala.SerialVersionUID")
   def SerialVersionUIDAnnot(implicit ctx: Context): ClassSymbol = SerialVersionUIDAnnotType.symbol.asClass
   lazy val TASTYSignatureAnnotType: TypeRef = ctx.requiredClassRef("scala.annotation.internal.TASTYSignature")
@@ -812,7 +814,6 @@ class Definitions {
   def SetterMetaAnnot(implicit ctx: Context): ClassSymbol = SetterMetaAnnotType.symbol.asClass
   lazy val ShowAsInfixAnotType: TypeRef = ctx.requiredClassRef("scala.annotation.showAsInfix")
   def ShowAsInfixAnnot(implicit ctx: Context): ClassSymbol = ShowAsInfixAnotType.symbol.asClass
-
   // convenient one-parameter method types
   def methOfAny(tp: Type): MethodType = MethodType(List(AnyType), tp)
   def methOfAnyVal(tp: Type): MethodType = MethodType(List(AnyValType), tp)
