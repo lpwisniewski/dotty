@@ -4,9 +4,10 @@ package typer
 
 import core._
 import ast.{Trees, untpd, tpd}
+import ast.{TreeInfo, Trees, tpd, untpd}
 import util.Positions._
-import util.Stats.{track, record, monitored}
-import printing.{Showable, Printer}
+import util.Stats.{monitored, record, track}
+import printing.{Printer, Showable}
 import printing.Texts._
 import Contexts._
 import Types._
@@ -30,7 +31,9 @@ import Trees._
 import Hashable._
 import util.Property
 import config.Config
-import config.Printers.{implicits, implicitsDetailed}
+import config.Printers.{implicits, implicitsDetailed, typr}
+import dotty.tools.dotc.mirror.Evaluator
+
 import collection.mutable
 import reporting.trace
 
@@ -689,7 +692,7 @@ trait Implicits { self: Typer =>
         else
           arg
       case fail @ SearchFailure(failed) =>
-        def trySpecialCase(cls: ClassSymbol, handler: Type => Tree, ifNot: => Tree) = {
+        def trySpecialCase(cls: ClassSymbol, handler: Type => Tree, ifNot: => Tree): Tree = {
           val base = formalValue.baseType(cls)
           if (base <:< formalValue) {
             // With the subtype test we enforce that the searched type `formalValue` is of the right form
@@ -702,9 +705,30 @@ trait Implicits { self: Typer =>
           trySpecialCase(defn.ClassTagClass, synthesizedClassTag,
             trySpecialCase(defn.QuotedTypeClass, synthesizedTypeTag,
               trySpecialCase(defn.TastyReflectionClass, synthesizedTastyContext,
-                trySpecialCase(defn.EqClass, synthesizedEq, failed))))
+                trySpecialCase(defn.EqClass, synthesizedEq, singletonSynthetize(formalValue, failed)))))
     }
   }
+
+  def singletonSynthetize(t: Type, els: Tree)(implicit ctx: Context): Tree = t match {
+      case t: ConstantType => Literal(t.value)
+      case t: TermRef => Ident(t)
+      case t: ThisType => This(t.cls)
+      case t: AppliedType =>
+
+        def treeTypeSynthetize(t: Type): Tree = t match {
+          case AppliedType(tycon: TypeRef, args) =>
+            val argsSynthetized: List[Tree] = args.map(singletonSynthetize(_, els))
+            if(tycon.typeSymbol.isMirror && !(argsSynthetized contains els))
+              Apply(Select(Ident(tycon.prefix.termSymbol.typeRef), tycon.typeSymbol.name.toTermName), argsSynthetized)
+            else els
+          case _ => els
+        }
+
+        val reduced: Type = Evaluator.reduce(t)
+        if (reduced eq t) treeTypeSynthetize(t)
+        else singletonSynthetize(reduced, els)
+      case _ => els
+    }
 
   /** Search an implicit argument and report error if not found */
   def implicitArgTree(formal: Type, pos: Position)(implicit ctx: Context): Tree = {
