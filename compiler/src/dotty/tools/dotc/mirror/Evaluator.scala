@@ -4,13 +4,16 @@ package mirror
 
 import core._
 import typer._
-import ast._, Trees._
-import util.Positions._, Types._, Contexts._, Constants._, Names._, NameOps._, Flags._
-import SymDenotations._, Symbols._, StdNames._, Annotations._
-import Decorators._, transform.SymUtils._
-import NameKinds.{UniqueName, EvidenceParamName, DefaultGetterName}
+import ast.{tpd, _}
+import Trees._
+import Types._
+import Contexts._
+import Constants._
+import Names._
+import Symbols._
 
 object Evaluator {
+
   import tpd._
 
   /** partially evaluate mirror types */
@@ -52,8 +55,13 @@ object Evaluator {
     case If(cond, thenp, elsep) =>
       if (eval(cond).tpe =:= ConstantType(Constant(true))) eval(thenp)
       else eval(elsep)
-    case _ =>
-      ConstFold(expr)
+    case Select(_, _) => ConstFold(expr)
+    case app @ Apply(Select(xt, opt), yt :: Nil) =>
+      (xt.tpe.widenTermRefExpr, yt.tpe.widenTermRefExpr) match {
+        case (ConstantType(_), ConstantType(_)) => ConstFold(expr)
+        case _ => ConstFold(app.copy(fun = Select(eval(xt), opt), eval(yt) :: Nil))
+      }
+    case _ => ConstFold(expr)
   }
 
   def getNames(sym: Symbol)(implicit ctx: Context): List[TermName] = {
@@ -68,4 +76,5 @@ object Evaluator {
       case None => EmptyTree
     }
   }
+
 }
