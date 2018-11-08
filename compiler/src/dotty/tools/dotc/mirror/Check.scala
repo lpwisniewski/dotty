@@ -59,7 +59,7 @@ object Check {
           val t = new tpd.TreeTraverser {
             def traverse(tree: tpd.Tree)(implicit ctx: Context): Unit = tree match {
               case ident: tpd.Ident if !ident.tpe.isError =>
-                if (ident.symbol.owner != sym)
+                if (ident.symbol.owner != sym && !ident.denot.asSymDenotation.isMirror)
                   ctx.error(s"Cannot access ${ident.symbol}. Only parameters are accessible in mirror methods.", ident.pos)
               case tree: tpd.DefTree =>
                 ctx.error(s"Definitions are not allowed in mirror methods.", tree.pos)

@@ -30,28 +30,14 @@ object Evaluator {
 
       if (reducible) {
         val sym = typcon.typeSymbol
-        val expr = getTree(sym)
-        val names = getNames(sym)
-
-        if (expr.isEmpty) return tp
-
         val values = args.map { case ConstantType(const) => tpd.Literal(const) }
-        val env = names.zip(values).toMap
-
-        val treeMap = new TreeMap {
-          override def transform(t: Tree)(implicit ctx: Context) = t match {
-            case Ident(name) => env(name.asTermName)
-            case _ => super.transform(t)
-          }
-        }
-        val exprClosed = treeMap.transform(expr)
-        eval(exprClosed).tpe
+        applyEval(sym, values, getTree(sym)).tpe
       } else AppliedType(typcon, args2)
     case _ =>
       tp
   }
 
-  def eval(expr: Tree)(implicit ctx: Context): Tree = expr match {
+  private def eval(expr: Tree)(implicit ctx: Context): Tree = expr match {
     case If(cond, thenp, elsep) =>
       if (eval(cond).tpe =:= ConstantType(Constant(true))) eval(thenp)
       else eval(elsep)
@@ -61,7 +47,34 @@ object Evaluator {
         case (ConstantType(_), ConstantType(_)) => ConstFold(expr)
         case _ => ConstFold(app.copy(fun = Select(eval(xt), opt), eval(yt) :: Nil))
       }
+    case Apply(f: Ident, args) => applyEval(f.symbol, args, expr)
     case _ => ConstFold(expr)
+  }
+
+  private def applyEval(sym: Symbol, args: List[tpd.Tree], els: => Tree)(implicit ctx: Context): tpd.Tree = {
+    val expr = getTree(sym)
+    val names = getNames(sym)
+
+    val evaluatedArgs = args map {
+      case t: tpd.Literal => t
+      case a: tpd.Apply =>
+        eval(a).tpe match {
+          case ConstantType(const) => tpd.Literal(const)
+          case _ => return els
+        }
+    }
+
+    val env: Map[TermName, Literal] = names.zip(evaluatedArgs).toMap
+
+    val treeMap = new TreeMap {
+      override def transform(t: Tree)(implicit ctx: Context): tpd.Tree = t match {
+        case i@Ident(name) => env.getOrElse(name.asTermName, i)
+        case _ => super.transform(t)
+      }
+    }
+    val exprClosed = treeMap.transform(expr)
+
+    eval(exprClosed)
   }
 
   def getNames(sym: Symbol)(implicit ctx: Context): List[TermName] = {
