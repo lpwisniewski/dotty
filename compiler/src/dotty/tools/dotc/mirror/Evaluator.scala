@@ -42,10 +42,10 @@ object Evaluator {
       if (eval(cond).tpe =:= ConstantType(Constant(true))) eval(thenp)
       else eval(elsep)
     case Select(_, _) => ConstFold(expr)
-    case app @ Apply(Select(xt, opt), yt :: Nil) =>
+    case app @ Apply(s @ Select(xt, opt), yt :: Nil) =>
       (xt.tpe.widenTermRefExpr, yt.tpe.widenTermRefExpr) match {
         case (ConstantType(_), ConstantType(_)) => ConstFold(expr)
-        case _ => ConstFold(app.copy(fun = Select(eval(xt), opt), eval(yt) :: Nil))
+        case _ => ConstFold(app.copy(fun = s.copy(eval(xt), opt), eval(yt) :: Nil))
       }
     case Apply(f: Ident, args) => applyEval(f.symbol, args, expr)
     case _ => ConstFold(expr)
