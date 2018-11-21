@@ -710,6 +710,7 @@ trait Implicits { self: Typer =>
   }
 
   def singletonSynthetize(t: Type, els: Tree)(implicit ctx: Context): Tree = t match {
+      case t: TypeVar => singletonSynthetize(t.instanceOpt, els)
       case t: ConstantType => Literal(t.value)
       case t: TermRef => Ident(t)
       case t: ThisType => This(t.cls)
