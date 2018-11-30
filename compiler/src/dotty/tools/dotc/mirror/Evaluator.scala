@@ -30,7 +30,7 @@ object Evaluator {
 
       if (reducible) {
         val sym = typcon.typeSymbol
-        val values = args.map { case ConstantType(const) => tpd.Literal(const) }
+        val values = args2.map { case ConstantType(const) => tpd.Literal(const) }
         applyEval(sym, values, getTree(sym)).tpe
       } else AppliedType(typcon, args2)
     case _ =>
