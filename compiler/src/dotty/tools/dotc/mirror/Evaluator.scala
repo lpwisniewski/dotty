@@ -33,6 +33,10 @@ object Evaluator {
         val values = args2.map { case ConstantType(const) => tpd.Literal(const) }
         applyEval(sym, values, getTree(sym)).tpe
       } else AppliedType(typcon, args2)
+    case t@ TermRef(pre, design) =>
+      val reduced = reduce(t.denot.info)
+      if(reduced.isInstanceOf[ConstantType]) reduced
+      else t
     case _ =>
       tp
   }
