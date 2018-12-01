@@ -154,6 +154,7 @@ object Types {
       case tp: RefinedOrRecType => tp.parent.isStable
       case tp: ExprType => tp.resultType.isStable
       case tp: AnnotatedType => tp.parent.isStable
+      case tp: AppliedType if tp.tycon.typeSymbol.isMirror => tp.args.forall(_.isStable)
       case _ => false
     }
 
