@@ -37,6 +37,11 @@ object Evaluator {
       val reduced = reduce(t.denot.info)
       if(reduced.isInstanceOf[ConstantType]) reduced
       else t
+    case t: TypeRef =>
+      t.underlying match {
+        case t: TypeBounds => reduce(t.dropAlias)
+        case _ => tp
+      }
     case _ =>
       tp
   }
