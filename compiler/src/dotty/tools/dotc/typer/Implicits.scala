@@ -726,7 +726,7 @@ trait Implicits { self: Typer =>
         }
 
         val reduced: Type = Evaluator.reduce(t)
-        if (reduced eq t) treeTypeSynthetize(t)
+        if (reduced =:= t) treeTypeSynthetize(t)
         else singletonSynthetize(reduced, els)
       case _ => els
     }
