@@ -727,6 +727,15 @@ trait Implicits { self: Typer =>
 
         val reduced: Type = Evaluator.reduce(t)
         if (reduced =:= t) treeTypeSynthetize(t)
+        else if (t.tycon.typeSymbol.name.toString.contains("Tuple")) {
+          val argsSynthetized: List[Tree] = t.args.map(singletonSynthetize(_, els))
+          if(!(argsSynthetized contains els)) {
+            val tuplesSymbols = t.tycon.normalizedPrefix.allMembers.filter(a => a.name.toString == t.tycon.typeSymbol.name.toString)
+            val tupleObject: TermRef = tuplesSymbols.find(sym => sym.asSymDenotation.isTerm).get.termRef
+            Apply(TypeApply(Select(Ident(tupleObject), tupleObject.allMembers.find(a => a.name.toString == "apply").get.name), argsSynthetized), argsSynthetized)
+          }
+          else els
+        }
         else singletonSynthetize(reduced, els)
       case _ => els
     }
